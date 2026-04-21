@@ -205,3 +205,16 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+
+# Data and Models (Never upload these)
+data/
+models/checkpoints/
+models/exports/
+
+# Python
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store
