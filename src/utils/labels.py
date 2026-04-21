@@ -7,9 +7,9 @@ LABEL_MAP = {
 }
 
 LABEL_NAMES = {
-    0: "Machine 1 – Normal",   1: "Machine 1 – Abnormal",
-    2: "Machine 2 – Normal",   3: "Machine 2 – Abnormal",
-    4: "Machine 3 – Normal",   5: "Machine 3 – Abnormal",
+    0: "Machine 1 - Normal",   1: "Machine 1 - Abnormal",
+    2: "Machine 2 - Normal",   3: "Machine 2 - Abnormal",
+    4: "Machine 3 - Normal",   5: "Machine 3 - Abnormal",
 }
 
 def get_label(machine_folder, status):
