@@ -18,6 +18,6 @@ features:
 
 training:
   batch_size: 64
-  epochs: 15        # Increased epochs for the real dataset
-  learning_rate: 0.001
-  num_workers: 4    # Kaggle CPUs can handle more workers
+  epochs: 20 # Increased epochs for the real dataset
+  learning_rate: 0.002
+  num_workers: 4 # Kaggle CPUs can handle more workers
