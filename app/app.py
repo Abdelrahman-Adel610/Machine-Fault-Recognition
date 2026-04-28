@@ -14,7 +14,8 @@ from src.utils.config import load_config
 from src.utils.labels import LABEL_NAMES
 from src.preprocessing.preprocess import preprocess_audio
 from src.feature_extraction.extract import extract_mel_spectrograms
-from src.models.resnet import get_resnet18_model
+from src.models.cnn import CustomAudioCNN
+
 
 warnings.filterwarnings('ignore')
 
@@ -23,8 +24,8 @@ CONFIG = load_config(os.path.join(REPO_ROOT, "config", "default.yaml"))
 device = torch.device("cpu") # Inference is usually fine on CPU for single files
 
 # 2. Load the trained model
-MODEL_PATH = os.path.join(REPO_ROOT, "models", "exports", "best_resnet18.pth")
-model = get_resnet18_model(num_classes=6)
+MODEL_PATH = os.path.join(REPO_ROOT, "models", "machine_fault_resnet18.pth")
+model = CustomAudioCNN(num_classes=6)
 
 # Load weights (map_location='cpu' ensures it works even if trained on Kaggle GPU)
 if os.path.exists(MODEL_PATH):

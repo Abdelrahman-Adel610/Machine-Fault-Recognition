@@ -15,7 +15,7 @@ def main():
     DATA_DIR = config['paths']['input_dir']
     OUTPUT_DIR = config['paths']['output_dir']
     TEST_CSV = os.path.join(OUTPUT_DIR, "test_metadata.csv")
-    MODEL_PATH = "models/machine_fault_custom_cnn.pth"
+    MODEL_PATH = "models/machine_fault_resnet18.pth"
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
