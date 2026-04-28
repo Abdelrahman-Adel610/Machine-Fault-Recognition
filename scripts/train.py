@@ -3,15 +3,17 @@ import yaml
 import torch
 import pandas as pd
 import torch.nn as nn
-from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, WeightedRandomSampler
 from tqdm import tqdm
 
 from src.data.dataset import AudioChunkDataset
 from src.models.cnn import CustomAudioCNN
 
+def sequential_split(group, train_frac):
+    split_idx = int(len(group) * train_frac)
+    return group.iloc[:split_idx], group.iloc[split_idx:]
+
 def main():
-    # Load config
     with open("config/kaggle.yaml", "r") as f:
         config = yaml.safe_load(f)
 
@@ -20,40 +22,59 @@ def main():
     CSV_PATH = os.path.join(OUTPUT_DIR, config['paths']['csv_name'])
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
-
-    # 1. Load Data & Split
+    
+    # 1. Load and Sort Data Chronologically
     df = pd.read_csv(CSV_PATH)
-    train_val_df, test_df = train_test_split(df, test_size=0.15, random_state=42, stratify=df['label'])
-    train_df, val_df = train_test_split(train_val_df, test_size=0.176, random_state=42, stratify=train_val_df['label'])
+    df = df.sort_values(by=['machine', 'label', 'file_path']).reset_index(drop=True)
 
-    # IMPORTANT FIX: Save test_df so evaluate.py can find it!
+    # 2. Sequential Splitting
+    train_val_list, test_list = [], []
+    for _, group in df.groupby(['machine', 'label']):
+        tv_group, test_group = sequential_split(group, train_frac=0.85)
+        train_val_list.append(tv_group)
+        test_list.append(test_group)
+
+    train_val_df = pd.concat(train_val_list).reset_index(drop=True)
+    test_df = pd.concat(test_list).reset_index(drop=True)
+    
+    # Save test metadata for evaluation script
     test_df.to_csv(os.path.join(OUTPUT_DIR, "test_metadata.csv"), index=False)
 
-    # 2. Datasets & Class Imbalance handling
-    train_dataset = AudioChunkDataset(train_df, DATA_DIR)
-    val_dataset   = AudioChunkDataset(val_df, DATA_DIR)
+    train_list, val_list =[], []
+    for _, group in train_val_df.groupby(['machine', 'label']):
+        t_group, v_group = sequential_split(group, train_frac=0.823)
+        train_list.append(t_group)
+        val_list.append(v_group)
 
+    train_df = pd.concat(train_list).reset_index(drop=True)
+    val_df = pd.concat(val_list).reset_index(drop=True)
+
+    # 3. Create Datasets (Enable Augmentation for Train)
+    train_dataset = AudioChunkDataset(train_df, DATA_DIR, is_train=True)
+    val_dataset   = AudioChunkDataset(val_df, DATA_DIR, is_train=False)
+
+    # 4. Handle Class Imbalance
     class_counts = train_df['label'].value_counts().sort_index().values
     class_weights = 1.0 / class_counts
     sample_weights = [class_weights[label] for _, _, label in train_dataset.samples]
-
     sampler = WeightedRandomSampler(weights=sample_weights, num_samples=len(sample_weights), replacement=True)
 
-    # 3. DataLoaders
+    # 5. DataLoaders
     batch_size = config['training']['batch_size']
     train_loader = DataLoader(train_dataset, batch_size=batch_size, sampler=sampler, num_workers=2)
     val_loader   = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
 
-    # 4. Initialize Model
+    # 6. Initialize Model
     model = CustomAudioCNN(num_classes=6).to(device)
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=config['training']['learning_rate'])
+    
+    # ADDED: weight_decay (L2 Regularization)
+    optimizer = torch.optim.Adam(model.parameters(), lr=config['training']['learning_rate'], weight_decay=1e-4)
 
-    # 5. Training Loop
+    # 7. Training Loop
     epochs = config['training']['epochs']
     os.makedirs("models", exist_ok=True)
-    best_model_path = "models/machine_fault_custom_cnn.pth"
+    best_model_path = "models/machine_fault_resnet18.pth"
 
     for epoch in range(epochs):
         print(f"\nEpoch {epoch+1}/{epochs}")

@@ -5,9 +5,10 @@ import numpy as np
 import collections
 import warnings
 
-# Add the project root to the path so we can import our modules
+# Resolve repo root from this file's location so all paths work in Docker/HF
 import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, REPO_ROOT)
 
 from src.utils.config import load_config
 from src.utils.labels import LABEL_NAMES
@@ -18,11 +19,11 @@ from src.models.resnet import get_resnet18_model
 warnings.filterwarnings('ignore')
 
 # 1. Setup Device and Config
-CONFIG = load_config("config/default.yaml")
+CONFIG = load_config(os.path.join(REPO_ROOT, "config", "default.yaml"))
 device = torch.device("cpu") # Inference is usually fine on CPU for single files
 
 # 2. Load the trained model
-MODEL_PATH = "models/exports/best_resnet18.pth"
+MODEL_PATH = os.path.join(REPO_ROOT, "models", "exports", "best_resnet18.pth")
 model = get_resnet18_model(num_classes=6)
 
 # Load weights (map_location='cpu' ensures it works even if trained on Kaggle GPU)
@@ -90,9 +91,15 @@ interface = gr.Interface(
     outputs=gr.Textbox(label="Diagnosis"),
     title="⚙️ Machine Fault Recognition AI",
     description="Upload an audio recording of a machine to detect if it is operating Normally or Abnormally.",
-    theme="huggingface"
+    theme=gr.themes.Soft()
 )
 
 if __name__ == "__main__":
-    # share=False for local testing. In Docker/HF, we bind to 0.0.0.0
-    interface.launch(server_name="0.0.0.0", server_port=7860)
+    # On Hugging Face Spaces the SPACE_ID env var is always set.
+    # Locally we bind to 127.0.0.1 so the browser opens automatically.
+    in_hf = os.environ.get("SPACE_ID") is not None
+    interface.launch(
+        server_name="0.0.0.0" if in_hf else "127.0.0.1",
+        server_port=7860,
+        share=False,
+    )
