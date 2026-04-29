@@ -1,3 +1,13 @@
+---
+title: Machine Fault Recognization
+emoji: 😻
+colorFrom: yellow
+colorTo: yellow
+sdk: docker
+app_port: 7860
+pinned: false
+license: apache-2.0
+---
 # Machine Fault Recognition (Deep Learning)
 
 This repository is organized for a 4-student team and an end-to-end deep learning workflow:
