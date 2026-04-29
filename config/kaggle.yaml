@@ -1,0 +1,23 @@
+paths:
+  # This is the path to the original raw dataset on Kaggle
+  input_dir: "/kaggle/input/datasets/alieldinalaa/nn-cmp27-dataset"
+  # This is the folder in Kaggle where we will save the processed .npz files
+  output_dir: "/kaggle/working/processed_data"
+  csv_name: "metadata.csv"
+
+audio:
+  target_sr: 16000
+  chunk_duration: 3.0
+  step_duration: 1.5
+  trim_top_db: 20
+
+features:
+  n_fft: 1024
+  hop_length: 512
+  n_mels: 128
+
+training:
+  batch_size: 64
+  epochs: 20 # Increased epochs for the real dataset
+  learning_rate: 0.002
+  num_workers: 4 # Kaggle CPUs can handle more workers

@@ -5,7 +5,7 @@ import warnings
 # Ignore librosa warnings about reading standard wav files to keep console clean
 warnings.filterwarnings('ignore')
 
-def preprocess_audio(file_path, target_sr=16000, chunk_duration=3.0, step_duration=1.5):
+def preprocess_audio(file_path, target_sr, chunk_duration, step_duration, trim_top_db=20):
     """
     Reads a raw audio file, cleans it, and splits it into fixed-size overlapping chunks.
     
@@ -20,10 +20,11 @@ def preprocess_audio(file_path, target_sr=16000, chunk_duration=3.0, step_durati
     """
     
     # STEP 1: Load & Resample (Handles Microphone Variations)
-    y, sr = librosa.load(file_path, sr=target_sr)
-    
+    y, sr = librosa.load(file_path, sr=target_sr, res_type='soxr_hq')
     # STEP 2: Silence Trimming (Handles Dead Space)
-    y_trimmed, index = librosa.effects.trim(y, top_db=20)
+
+    y_trimmed, _ = librosa.effects.trim(y, top_db=trim_top_db)
+
     
     # STEP 3: Peak Normalization (Handles Volume Variations)
     max_amplitude = np.max(np.abs(y_trimmed))
